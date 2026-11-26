@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shoof Market</title>
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<style>
+  :root { --bg:#14101f; --card:#1f1a30; --text:#f4f1fb; --muted:#a99fc4; --accent:#8a5cf6; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+         background: var(--bg); color: var(--text); min-height:100vh; display:flex;
+         align-items:center; justify-content:center; padding:16px; }
+  .card { background: var(--card); border-radius:16px; padding:24px; width:100%; max-width:420px; text-align:center; }
+  h1 { margin:0 0 8px; font-size:1.6rem; }
+  p { color: var(--muted); line-height:1.5; }
+  button { background: var(--accent); color:#fff; border:0; border-radius:12px; padding:12px 20px;
+           font-size:1rem; cursor:pointer; width:100%; margin-top:12px; }
+  button.ghost { background:transparent; border:1px solid var(--muted); color:var(--muted); }
+  #status { margin-top:16px; min-height:1.4em; font-size:.95rem; }
+</style>
+</head>
+<body>
+<main class="card">
+  <h1 id="title">Shoof Market</h1>
+  <p id="tagline">Open a Pi-powered store in minutes.</p>
+  <button id="login">Sign in with Pi</button>
+  <button id="lang" class="ghost">العربية</button>
+  <div id="status" role="status"></div>
+</main>
+
+<script>
+const T = {
+  en: { dir:"ltr", tagline:"Open a Pi-powered store in minutes.", login:"Sign in with Pi", lang:"العربية",
+        needPi:"Please open this app inside Pi Browser.", working:"Signing in…",
+        hi:(n)=>"Welcome, " + n + "!", fail:"Sign-in failed. Please try again." },
+  ar: { dir:"rtl", tagline:"افتح متجرك بعملة Pi في دقائق.", login:"سجّل الدخول بحساب Pi", lang:"English",
+        needPi:"يرجى فتح التطبيق داخل Pi Browser.", working:"جارٍ تسجيل الدخول…",
+        hi:(n)=>"أهلًا " + n + "!", fail:"فشل تسجيل الدخول، حاول مرة أخرى." }
+};
+let lang = "en";
+const $ = (id) => document.getElementById(id);
+
+function render() {
+  const t = T[lang];
+  document.documentElement.lang = lang;
+  document.documentElement.dir = t.dir;
+  $("tagline").textContent = t.tagline;
+  $("login").textContent = t.login;
+  $("lang").textContent = t.lang;
+}
+$("lang").onclick = () => { lang = lang === "en" ? "ar" : "en"; render(); };
+
+// sandbox:true = Pi Testnet. Change to false only when the app is moved to Mainnet.
+if (window.Pi) { Pi.init({ version: "2.0", sandbox: true }); }
+
+function onIncompletePaymentFound(payment) {
+  // Payments come later. A server must handle unfinished payments.
+  console.log("Incomplete payment", payment);
+}
+
+$("login").onclick = async () => {
+  const t = T[lang];
+  if (!window.Pi) { $("status").textContent = t.needPi; return; }
+  $("status").textContent = t.working;
+  try {
+    const auth = await Pi.authenticate(["username"], onIncompletePaymentFound);
+    // Later: send auth.accessToken to YOUR server and verify it with the Pi API.
+    $("status").textContent = t.hi(auth.user.username);
+  } catch (e) {
+    console.error(e);
+    $("status").textContent = t.fail;
+  }
+};
+render();
+</script>
+</body>
+</html>
